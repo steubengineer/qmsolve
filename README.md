@@ -9,7 +9,8 @@ This fork of the QMsolve project aims to improve the parallel GPU-based solvers 
 For installation, usage, and additional examples, refer to the original QMsolve repo. The examples provided in this fork are meant to demonstrate improved functionality only. 
 
 ## Examples
-The following example is calculated in ~1.7s on an Nvidia GeForce RTX 4070 using the split-step-cupy solver option. 
+The following example is calculated in ~1.7s on an Nvidia GeForce RTX 4070 using the split-step-cupy solver option.
+
 ![animation](https://github.com/steubengineer/qmsolve/blob/main/images/latticedemo.gif)
 
 ## Original QMsolve Developers
