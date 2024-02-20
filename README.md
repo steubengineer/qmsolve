@@ -13,6 +13,9 @@ The following example is calculated in ~1.7s on an Nvidia GeForce RTX 4070 using
 
 ![animation](https://github.com/steubengineer/qmsolve/blob/main/images/latticedemo.gif)
 
+In three dimensions, ~20 seconds compute is used to solve the analogus example using the same hardware and solver. 
+![animation](https://github.com/steubengineer/qmsolve/blob/main/images/latticedemo3D.gif)
+
 ## Original QMsolve Developers
 
 - [Rafael de la Fuente](https://github.com/rafael-fuente)
