@@ -1,7 +1,9 @@
 import numpy as np
+import os
 from mayavi import mlab
+from tvtk.util import ctf
 from .visualization import Visualization
-from ..util.colour_functions import complex_to_rgb
+from ..util.colour_functions import complex_to_rgb, complex_to_rgba
 from ..util.constants import *
 
 
@@ -476,3 +478,110 @@ class VisualizationSingleParticle3D(Visualization):
             animation()
             mlab.show()
 
+from .visualization import TimeVisualization
+
+class TimeVisualizationSingleParticle3D( TimeVisualization ):
+    def __init__(self,simulation):
+        self.simulation = simulation
+        self.H = simulation.H
+
+    def plot( self, t=0.0, index=None,
+              figsize=(600, 600),
+              potential_saturation=0.25, potential_cutoff=0.01,
+              wavefunction_saturation=0.5, wavefunction_cutoff=0.01,
+              view_azimuth_angle=60, view_elevation_angle=60,
+              save_image=False, filename="qmsolve_img.png" ):
+
+        #find the right index if the user supplied a timestamp, otherwise use the specified index
+        if index == None:
+            idx = int((self.simulation.store_steps)/self.simulation.total_time*t)
+            label = u"t = {} femtoseconds".format("%.3f" % (t / femtoseconds))
+        else:
+            idx = index
+            label = ""
+            #label = u"  solution step {}  ".format("%.3i" % (idx))
+
+        #grab the plot extents
+        L = self.simulation.H.extent / 2 / Å
+        N = self.simulation.H.N
+
+        #now compute the data frame - first load the wave function
+        Ψp = self.simulation.Ψ[idx]
+
+        #then the potential field
+        v = self.simulation.H.Vgrid
+        maxv = np.max(v)
+        vn = v/maxv
+
+        #normalize and clip the wavefunction magnitude and phase
+        mag = np.abs(Ψp)/np.max(np.abs(self.simulation.Ψ))
+        magc = np.where(mag > wavefunction_cutoff, 0.5, 0.)
+        arg = np.pi + np.angle(Ψp)
+        maxArg = np.max(arg)
+        argc = np.where(mag > wavefunction_cutoff, arg/(2.0*maxArg), 0.)
+
+        #here's the actual trick: if the wavefunction magnitude is suffciently large,
+        #promote that voxel into the opaque part of the colormap. Then give it a color according to the phase.
+        #simultaneously, put the high-potential regions into the negative space of the colormap.
+        s =  magc + argc - vn
+
+        # setup the volume renderer
+        if save_image:
+            mlab.options.offscreen = True
+
+        #initialize a single figure to hold everything, put a volume plot with a label in it
+        fig = mlab.figure('QMsolve 3D', bgcolor=(0, 0, 0), size=figsize)
+        vol = mlab.pipeline.volume( mlab.pipeline.scalar_field(s) )
+        mlab.text(0.375,0.9,label ,width=0.25)
+
+        #now load the colormap
+        eps = 1e-4 #make this as small as you can before VTK begins to warn you about the OpenGL texture size
+        c = ctf.save_ctfs(vol._volume_property)
+        c['rgb'] = [
+            #grayscale for the potential field in the negative range
+            [-1.0, 1.0, 1.0, 1.0],
+            [-10*eps, 0.2, 0.2, 0.2],
+            [-eps, 0.0, 0.0, 0.0],
+            [0., 0., 0., 0.],
+            #HSV rainbow for the wavefunction phase in the positive range
+            [0.5, 1., 0., 0.],
+            [0.583333, 1., 1., 0.],
+            [0.666667, 0., 1., 0.],
+            [0.75, 0., 1., 1.],
+            [0.833333, 0., 0., 1.],
+            [0.916667, 1., 0., 1.],
+            [1., 1., 0., 0.]
+        ]
+        #TODO: find out why putting negative values into the alpha table causes OpenGL texture size warnings...
+        c['alpha'] = [
+            [-1.0,potential_saturation],
+            [-potential_cutoff, potential_saturation],
+            [-potential_cutoff+eps, 0.0],
+            [0, 0.0],[0.5,0.0],
+            [0.5, wavefunction_saturation],
+            [1.0, wavefunction_saturation]
+        ]
+
+        # update the shadow LUT of the volume module.
+        ctf.load_ctfs(c, vol._volume_property)
+        vol.update_ctf = True
+
+        # draw bounding box and axes ticks
+        mlab.outline()
+        ax = mlab.axes(xlabel='x [Å]', ylabel='y [Å]', zlabel='z [Å]', nb_labels=3, ranges=(-L, L, -L, L, -L, L))
+        ax.label_text_property.font_family = 'times'
+        ax.axes.font_factor = 0.75
+
+        #set the view orientation
+        mlab.view(azimuth=view_azimuth_angle, elevation=view_elevation_angle, distance=N * 3.5)#3.75)
+
+        #save or show the image based on user selection
+        if(save_image):
+            mlab.savefig( filename )
+            mlab.clf()
+        else:
+            mlab.show()
+
+    def animate(self, xlim=None, ylim=None, figsize=(7, 7), animation_duration=5, fps=20, save_animation=False, potential_saturation=0.8, wavefunction_saturation=0.8):
+        #animation visualization
+        pass

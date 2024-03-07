@@ -35,3 +35,4 @@ def complex_to_rgba(Z: np.ndarray, max_val: float = 1.0) -> np.ndarray:
     abs_z = np.abs(Z)/ max_val
     abs_z = np.where(abs_z> 1., 1. ,abs_z)
     return np.concatenate((rgb, abs_z.reshape((*abs_z.shape,1))), axis= (abs_z.ndim))
+

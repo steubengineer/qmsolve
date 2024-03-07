@@ -70,6 +70,7 @@ def init_eigenstate_visualization(eigenstates):
 
 from .single_particle_1D import TimeVisualizationSingleParticle1D
 from .single_particle_2D import TimeVisualizationSingleParticle2D
+from .single_particle_3D import TimeVisualizationSingleParticle3D
 from .two_identical_particles_1D import TimeVisualizationTwoIdenticalParticles1D
 from ..particle_system import SingleParticle, TwoParticles
 from ..time_dependent_solver import TimeSimulation
@@ -83,9 +84,7 @@ def init_timesimulation_visualization(simulation):
         return TimeVisualizationSingleParticle2D(simulation) 
 
     elif (isinstance(simulation.H.particle_system , SingleParticle) and (simulation.H.spatial_ndim == 3)):
-        raise NotImplementedError()
-        #from .single_particle_3D import TimeVisualizationSingleParticle3D
-        #return TimeVisualizationSingleParticle3D(simulation)
+        return TimeVisualizationSingleParticle3D(simulation)
 
     elif isinstance(simulation.H.particle_system , TwoParticles):
         return TimeVisualizationTwoIdenticalParticles1D(simulation)
