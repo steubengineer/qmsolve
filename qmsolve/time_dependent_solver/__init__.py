@@ -1,2 +1,2 @@
-from .time_dependent_solver import TimeSimulation
+from .time_dependent_solver import TimeSimulation, IncrementalTimeSimulation
 

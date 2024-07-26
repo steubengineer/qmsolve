@@ -486,7 +486,7 @@ class TimeVisualizationSingleParticle3D( TimeVisualization ):
         self.H = simulation.H
 
     def plot( self, t=0.0, index=None,
-              figsize=(600, 600),
+              figsize=(600, 600), wavefunction_max = None,
               potential_saturation=0.25, potential_cutoff=0.01,
               wavefunction_saturation=0.5, wavefunction_cutoff=0.01,
               view_azimuth_angle=60, view_elevation_angle=60,
@@ -513,8 +513,13 @@ class TimeVisualizationSingleParticle3D( TimeVisualization ):
         maxv = np.max(v)
         vn = v/maxv
 
-        #normalize and clip the wavefunction magnitude and phase
-        mag = np.abs(Ψp)/np.max(np.abs(self.simulation.Ψ))
+        #normalize the wavefunction by the all-time max or the user-specified value
+        if wavefunction_max == None:
+            Ψmax = np.max(np.abs(self.simulation.Ψ))
+        else:
+            Ψmax = wavefunction_max
+        # normalize and clip the wavefunction magnitude and phase
+        mag = np.abs(Ψp)/Ψmax
         magc = np.where(mag > wavefunction_cutoff, 0.5, 0.)
         arg = np.pi + np.angle(Ψp)
         maxArg = np.max(arg)
@@ -579,6 +584,10 @@ class TimeVisualizationSingleParticle3D( TimeVisualization ):
         if(save_image):
             mlab.savefig( filename )
             mlab.clf()
+
+            #free some memory, see if that helps!
+            del ax, c, vol, fig, s, argc, maxArg, arg, magc, mag, vn, v, Ψp
+
         else:
             mlab.show()
 

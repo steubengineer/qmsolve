@@ -12,3 +12,7 @@ progressbar>=2.5
 # The following is neccesary
 # for storing a loading computed eigenstates
 h5py >= 3.2.1
+
+# The following is necessary
+# for mesh manipulation
+# pymeshlab >= 2022.2

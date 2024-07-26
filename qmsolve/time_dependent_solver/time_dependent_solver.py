@@ -16,7 +16,7 @@ import time
 import matplotlib.pyplot as plt
 from ..util.colour_functions import complex_to_rgba
 
-from .split_step import SplitStep, SplitStepCupy
+from .split_step import SplitStep, SplitStepCupy, IncrementalSplitStepCupy
 from .crank_nicolson import CrankNicolson, CrankNicolsonCupy
 
 class TimeSimulation:
@@ -62,3 +62,30 @@ class TimeSimulation:
         """
         """
         self.method.run(initial_wavefunction, total_time, dt, store_steps)
+
+class IncrementalTimeSimulation:
+    """
+    Class for configuring large time dependent simulations, where only one increment can be stored on the GPU at a time.
+    """
+
+    def __init__(self, hamiltonian, method = "split-step-cupy"):
+
+        self.H = hamiltonian
+        implemented_solvers = ('split-step-cupy')
+
+        if method == "split-step-cupy":
+
+            if self.H.potential_type == "grid":
+                self.method = IncrementalSplitStepCupy(self)
+            else:
+                raise NotImplementedError(
+                f"split-step can only be used with grid potential_type. Use crank-nicolson instead")
+        else:
+            raise NotImplementedError(f"{method} solver has not been implemented. Use one of {implemented_solvers}")
+    def init(self, initial_wavefunction, dt):
+        #sets everything up
+        self.method.init(initial_wavefunction, dt)
+
+    def run(self, n):
+        #runs the pre-initialized sim for n iterations
+        self.method.run( n )

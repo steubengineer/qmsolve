@@ -73,7 +73,7 @@ from .single_particle_2D import TimeVisualizationSingleParticle2D
 from .single_particle_3D import TimeVisualizationSingleParticle3D
 from .two_identical_particles_1D import TimeVisualizationTwoIdenticalParticles1D
 from ..particle_system import SingleParticle, TwoParticles
-from ..time_dependent_solver import TimeSimulation
+from ..time_dependent_solver import TimeSimulation, IncrementalTimeSimulation
 
 def init_timesimulation_visualization(simulation):
 
@@ -96,6 +96,6 @@ def init_visualization(argument):
         eigenstates = argument
         return init_eigenstate_visualization(eigenstates)
 
-    elif isinstance(argument, TimeSimulation):
+    elif isinstance(argument, TimeSimulation) or isinstance(argument, IncrementalTimeSimulation) :
         simulation = argument
         return init_timesimulation_visualization(simulation)

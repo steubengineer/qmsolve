@@ -129,3 +129,47 @@ class SplitStepCupy(Method):
 
         self.simulation.Ψ = Ψ.get()
         self.simulation.Ψmax = np.amax(np.abs(self.simulation.Ψ ))
+
+class IncrementalSplitStepCupy(Method):
+
+    def __init__(self, simulation):
+        self.simulation = simulation
+        self.H = simulation.H
+        self.simulation.Vmin = np.amin(self.H.Vgrid)
+        self.simulation.Vmax = np.amax(self.H.Vgrid)
+
+        self.H.particle_system.compute_momentum_space(self.H)
+        self.p2 = self.H.particle_system.p2
+
+
+    def init(self, initial_wavefunction, dt):
+        import cupy as cp
+        self.simulation.dt = dt
+
+        #initialize the wavefunction array on the gpu
+        self.Ψgpu = cp.zeros((1, *([self.H.N] * self.H.ndim)), dtype=cp.complex64)
+        self.Ψgpu[0] = cp.array(initial_wavefunction(self.H.particle_system))
+
+        #precompute necessary arrays
+        m = self.H.particle_system.m
+        self.p2 = cp.array(self.p2, dtype=cp.complex64)
+        self.Ur = cp.exp(-0.5j * (self.simulation.dt / hbar) * cp.array(self.H.Vgrid), dtype=cp.complex64)
+        self.Uk = cp.exp(-0.5j * (self.simulation.dt / (m * hbar)) * self.p2)
+
+        #free the gpu memory used for intermediates
+        del self.p2
+        cp._default_memory_pool.free_all_blocks()
+
+    def run(self, n):
+        import cupy as cp
+        # print(self.Ur.size*self.Ur.itemsize)
+        # print(self.Uk.size*self.Uk.itemsize)
+        # print(self.Ψgpu.size*self.Ψgpu.itemsize )
+        t0 = time.time()
+        for j in range(n):
+            #c = cp.fft.fftshift( cp.fft.fftn( self.Ur*self.Ψgpu[0] ) )
+            #self.Ψgpu[0] = self.Ur * cp.fft.ifftn( cp.fft.ifftshift( self.Uk*c ))
+            self.Ψgpu[0] = self.Ur * cp.fft.ifftn(cp.fft.ifftshift(self.Uk * (cp.fft.fftshift( cp.fft.fftn( self.Ur*self.Ψgpu[0] ) ))))
+
+        self.simulation.Ψ = self.Ψgpu.get()
+        print(n, "steps, took", time.time() - t0, "s")
